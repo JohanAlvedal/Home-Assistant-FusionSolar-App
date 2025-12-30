@@ -1,0 +1,115 @@
+template:
+  - sensor:
+      - name: "Battery net power"
+        unique_id: battery_power_net
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set discharge_w = (states('sensor.battery_consumption_power') | float(0)) * 1000 %}
+          {% set charge_w = (states('sensor.battery_injection_power') | float(0)) * 1000 %}
+          {{ (charge_w - discharge_w) | round(0) }}
+
+      - name: "Battery charging power"
+        unique_id: battery_charging_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set charge_w = (states('sensor.battery_injection_power') | float(0)) * 1000 %}
+          {{ (charge_w if charge_w > 0 else 0) | round(0) }}
+
+      - name: "Battery discharging power"
+        unique_id: battery_discharging_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set discharge_w = (states('sensor.battery_consumption_power') | float(0)) * 1000 %}
+          {{ (discharge_w if discharge_w > 0 else 0) | round(0) }}
+
+      # Net to grid: + = export, - = import
+      - name: "Grid net power"
+        unique_id: grid_net_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set imp_w = (states('sensor.grid_consumption_power') | float(0)) * 1000 %}
+          {% set exp_w = (states('sensor.grid_injection_power') | float(0)) * 1000 %}
+          {{ (exp_w - imp_w) | round(0) }}
+
+      # PV self-consumption (approx): production - export
+      - name: "PV self-consumed power"
+        unique_id: pv_self_consumed_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set pv_w  = (states('sensor.panel_production_power') | float(0)) * 1000 %}
+          {% set exp_w = (states('sensor.grid_injection_power') | float(0)) * 1000 %}
+          {{ max(0, pv_w - exp_w) | round(0) }}
+
+      # Share of current house load covered by PV (0-100%)
+      - name: "PV cover now"
+        unique_id: pv_cover_now
+        unit_of_measurement: "%"
+        state: >
+          {% set load_w = (states('sensor.house_load_power') | float(0)) * 1000 %}
+          {% set pv_w   = (states('sensor.panel_production_power') | float(0)) * 1000 %}
+          {% if load_w > 0 %}
+            {{ (min(1, pv_w / load_w) * 100) | round(0) }}
+          {% else %}
+            0
+          {% endif %}
+
+      # Instant self-sufficiency: 100% if you're not importing
+      - name: "Self-sufficiency now"
+        unique_id: self_sufficiency_now
+        unit_of_measurement: "%"
+        state: >
+          {% set load_w = (states('sensor.house_load_power') | float(0)) * 1000 %}
+          {% set imp_w  = (states('sensor.grid_consumption_power') | float(0)) * 1000 %}
+          {% if load_w > 0 %}
+            {{ ((1 - min(1, imp_w / load_w)) * 100) | round(0) }}
+          {% else %}
+            0
+          {% endif %}
+
+      - name: "Energy mode"
+        unique_id: energy_mode
+        state: >
+          {% set pv_w  = (states('sensor.panel_production_power') | float(0)) * 1000 %}
+          {% set imp_w = (states('sensor.grid_consumption_power') | float(0)) * 1000 %}
+          {% set exp_w = (states('sensor.grid_injection_power') | float(0)) * 1000 %}
+          {% if exp_w > 50 %}
+            🌞📤 Export mode
+          {% elif pv_w > imp_w %}
+            🌤️👍 PV powering the house
+          {% elif imp_w > 50 %}
+            🌙📥 Import mode
+          {% else %}
+            😴 Quiet moment
+          {% endif %}
+
+sensor:
+  - platform: integration
+    source: sensor.house_load_power
+    name: House load energy
+    unit_prefix: k
+    round: 2
+  - platform: integration
+    source: sensor.grid_consumption_power
+    name: Grid import energy
+    unit_prefix: k
+    round: 2
+  - platform: integration
+    source: sensor.grid_injection_power
+    name: Grid export energy
+    unit_prefix: k
+    round: 2
+  - platform: integration
+    source: sensor.panel_production_power
+    name: PV energy
+    unit_prefix: k
+    round: 2
