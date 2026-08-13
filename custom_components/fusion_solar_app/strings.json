@@ -3,13 +3,15 @@
     "title": "Fusion Solar App Integration",
     "abort": {
       "already_configured": "Device is already configured",
-      "reconfigure_successful": "Reconfiguration successful"
+      "reconfigure_successful": "Reconfiguration successful",
+      "reauth_successful": "Re-authentication successful"
     },
     "error": {
       "cannot_connect": "Failed to connect",
       "invalid_auth": "Invalid authentication",
       "unknown": "Unexpected error",
-      "captcha_required": "Captcha required"
+      "captcha_required": "Captcha required",
+      "invalid_captcha": "Invalid captcha. Please try again."
     },
     "step": {
       "user": {
@@ -32,6 +34,15 @@
         "data": {
           "captcha_input": "Captcha"
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Fusion Solar",
+        "description": "Your session has expired and requires re-authentication.",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "fusion_solar_host": "Fusion Solar Login Host"
+        }
       }
     }
   },
@@ -39,10 +50,29 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Scan Interval (seconds)"
+          "scan_interval": "Scan Interval (seconds)",
+          "forecast_provider": "Forecast provider"
         },
         "description": "Amend your options.",
         "title": "Integration Options"
+      },
+      "solcast": {
+        "data": {
+          "solcast_forecast_today_entity": "Solcast forecast today sensor"
+        },
+        "description": "Select the Solcast sensor that exposes the detailedHourly forecast attribute.",
+        "title": "Solcast Forecast Options"
+      }
+    },
+    "error": {
+      "invalid_solcast_entity": "The selected entity does not expose a valid detailedHourly Solcast forecast."
+    }
+  },
+  "selector": {
+    "forecast_provider": {
+      "options": {
+        "native": "Native (last 7 days)",
+        "solcast": "Solcast"
       }
     }
   }
